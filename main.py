@@ -3,5 +3,5 @@
 from Calculator import *
 
 
-calc = Calculator()
+calc = Calculator(15)
 calc.app_window.mainloop()

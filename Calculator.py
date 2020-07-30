@@ -1,11 +1,11 @@
 import tkinter as tk
+import tkinter.font as font
 from functools import partial
 
 
-def eval_expression(arg1: str, operation: str, arg2=None):
+def eval_expression(arg1: str, operation: str, arg2: str):
     if operation == '+':
         return str(int(r)) if int(r := float(arg1) + float(arg2)) == int(r) else str(r)
-        # answer_format(float(arg1) + float(arg2))
     if operation == '-':
         return str(int(r)) if int(r := float(arg1) - float(arg2)) == int(r) else str(r)
     if operation == '*':
@@ -14,15 +14,12 @@ def eval_expression(arg1: str, operation: str, arg2=None):
         if arg2 == '0':
             return 'Error'
         return str(int(r)) if int(r := float(arg1) / float(arg2)) == int(r) else str(r)
-    if operation == '%' and arg2 is None:
-        return str(int(r)) if int(r := float(arg1) / 100.0) == int(r) else str(r)
-    # if operation == '='
 
 
 class Calculator:
     def button_command(self, key: str):  # handler for calculator button presses
         if key.isdigit():
-            if self.clicked_op or ((self.display['text']) == '0' and key != 0):
+            if self.replace or ((self.display['text']) == '0' and key != 0):
                 # replace number if there's a 0 or an operation button was clicked last, otherwise concat
                 self.display['text'] = str(key)
                 self.clicked_op = False
@@ -33,37 +30,48 @@ class Calculator:
                 self.display['text'] += '.'
         elif key == 'C':
             self.display['text'] = '0'
-            self.arg = '0'
-            self.last_op = None
+            self.arg = None
+            self.prev_op = None
             self.clicked_op = False
-        elif key in '+/-*%=':
+        elif key in '+-*/':
             if self.arg:
-                r = eval_expression(self.arg, key, self.display['text'])
-                self.display['text'] = str(r)
-                self.arg = r
+                self.arg = eval_expression(self.arg, key, self.display['text'])
+                self.display['text'] = self.arg
             else:
                 self.arg = self.display['text']
-                self.clicked_op = True
-        elif key == '+-':
+                self.replace = True
+            self.prev_op = key
+        elif key == '=':
+            if self.arg:
+                self.arg = eval_expression(self.arg, self.prev_op, self.display['text'])
+                self.display['text'] = self.arg
+        elif key == 'sign':
             self.display['text'] = str(-1 * int(self.display['text']))
+        elif key == '%':
+            self.display['text'] = str(float(self.display['text']) / 100.0)
 
-    def __init__(self, ratio=1):
-        self.arg = '0'
-        self.last_op = None
-        self.clicked_op = False
+        print('arg: {}, op/key: {}, last_op: {}, replace: {}'.format(self.arg, key, self.prev_op, self.replace))
+
+    def __init__(self, font_size=10):
+        self.arg = None
+        self.prev_op = None
+        self.prev_arg = None
+        self.replace = False
+
+        self.font = (None, font_size)
 
         self.app_window = tk.Tk()  # main app window
         self.app_window.title('Calculator')  # name the window
         self.app_window.resizable(False, False)  # don't allow resize in either dimension
 
-        self.display = tk.Label(text='0', height=2, anchor='e')  # display for the numbers
+        self.display = tk.Label(text='0', height=2, anchor='e', font=self.font)  # display for the numbers
         self.display.config(relief=tk.SUNKEN)  # make display have a sunken border
         self.display.grid(row=0, columnspan=5, sticky='news')  # make display go across the entire first row
 
         self.buttons = {}
         b = [  # configurations of the buttons
             ('C', 'C', '#D3D3D3', 1, 0),
-            ('+-', '+/-', '#D3D3D3', 1, 1),
+            ('sign', '+/-', '#D3D3D3', 1, 1),
             ('%', '%', '#D3D3D3', 1, 2),
             ('/', '÷', 'orange', 1, 3),
             ('7', 7, 'gray', 2, 0),
@@ -84,9 +92,13 @@ class Calculator:
         ]
 
         for key, text, bg, r, c in b:
-            self.buttons[key] = tk.Button(text=text, height=3, width=5, padx=0, pady=0, bg=bg,
+            self.buttons[key] = tk.Button(text=text, height=3, width=5, padx=0, pady=0, bg=bg, font=self.font,
                                           command=partial(self.button_command, key))
             if key == '0':  # 0 button takes up 2 spaces
                 self.buttons['0'].grid(row=r, column=c, columnspan=2, sticky='news')
             else:
                 self.buttons[key].grid(row=r, column=c)
+
+        # self.debug = tk.Label(height=2, anchor='e')  # display for the numbers
+        # self.debug.config(relief=tk.SUNKEN)  # make display have a sunken border
+        # self.debug.grid(row=6, columnspan=5, sticky='news')  # make display go across the entire first row
